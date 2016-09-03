@@ -21,15 +21,15 @@ If [available in Hex](https://hex.pm/docs/publish), the package can be installed
       [applications: [:injector]]
     end
     ```
-# 感谢
+## 感谢
 
 一开始要做这个项目的时候，翻阅了很多 Android 构建的资料，边看边写。
 做到一半的时候，突然看到 leenjewel 同学的blog，以及他做的 MySDK。
 相逢恨晚啊，早看到了我就不会走那些弯路了。 把自己的代码做了大幅重构，
 打包流程基本上最后变成了照抄 MySDK 了 :)
 
-http://leenjewel.github.io/blog/2015/12/02/ye-shuo-android-apk-da-bao/
-https://github.com/leenjewel/mysdk
+* http://leenjewel.github.io/blog/2015/12/02/ye-shuo-android-apk-da-bao/
+* https://github.com/leenjewel/mysdk
 
 想折腾的这一块的同学，强烈建议读读这篇文章，也可以试试使用 MySDK。
 
@@ -41,5 +41,5 @@ https://github.com/leenjewel/mysdk
 
 最后，这个项目我还是继续做下来了。
 
-# Roadmap
+## Roadmap
 接下来会想办法把我司的 EjoySDK 和其他SDK 对接的部分也整理开放出来，以及制作一个 Web 的管理系统。
