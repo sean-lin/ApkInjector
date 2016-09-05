@@ -6,7 +6,9 @@ defmodule Injector.Project do
   defstruct [
     project_name: nil,
     project_desc: "",
-   
+    android_sdk_root: nil,  # required
+    android_platform: nil,  # required
+
     sdk_list: [],
     meta_data: %{},
 
@@ -17,18 +19,16 @@ defmodule Injector.Project do
     apk_gen_dir: nil,
     apk_bin_dir: nil,
 
-    android_sdk_root: nil,  # required
-    android_platform: nil,  # required
-
     base_package: nil,
     aapt: nil, dx: nil, zipalign: nil,
     java: nil, javac: nil, jar: nil, jarsigner: nil,
     apktool: nil, baksmali: nil,
 
     apk_path: nil,
+    keystore: nil, storepass: nil, alias: nil, keypass: nil,
+
     apk_unsigned_path: nil,
     apk_signed_path: nil,
-    keystore: nil, storepass: nil, alias: nil, keypass: nil,
 
     manifest: nil,
     manifest_path: nil,
@@ -198,8 +198,14 @@ defmodule Injector.Builder do
   end
 
   defp inject_sdk_manifest(project, sdk) do
+    meta_data = %{
+      "main_activity": project.manifest.main_activity_name,
+      "package": project.manifest.package} 
+      |> Map.merge(project.meta_data)
+      |> Map.merge(sdk.meta_data)
+
     manifest = Path.join(sdk.path, "sdk_android_manifest.xml")
-                |> EEx.eval_file(Map.to_list(project.meta_data))
+                |> EEx.eval_file(Map.to_list(meta_data))
                 |> Injector.AndroidManifest.string
 
     %{project | manifest: Injector.AndroidManifest.merge(project.manifest, manifest)}

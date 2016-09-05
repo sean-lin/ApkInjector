@@ -4,6 +4,6 @@ defmodule Injector.SDKInfo do
     class: nil,
     src: ["src"],
     classpath: ["libs"],
-    metadata: [],
+    meta_data: %{}, 
   ]
 end
