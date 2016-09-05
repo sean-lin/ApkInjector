@@ -21,6 +21,7 @@ If [available in Hex](https://hex.pm/docs/publish), the package can be installed
       [applications: [:injector]]
     end
     ```
+
 ## 感谢
 
 一开始要做这个项目的时候，翻阅了很多 Android 构建的资料，边看边写。
@@ -42,4 +43,5 @@ If [available in Hex](https://hex.pm/docs/publish), the package can be installed
 最后，这个项目我还是继续做下来了。
 
 ## Roadmap
+
 接下来会想办法把我司的 EjoySDK 和其他SDK 对接的部分也整理开放出来，以及制作一个 Web 的管理系统。
