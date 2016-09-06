@@ -29,6 +29,7 @@ defmodule Injector.Project do
 
     apk_unsigned_path: nil,
     apk_signed_path: nil,
+    apk_align_path: nil,
 
     manifest: nil,
     manifest_path: nil,
@@ -125,6 +126,7 @@ defmodule Injector.Builder do
     |> Map.put(:apk_asserts_dir, Path.join([project.work_dir, "out", "asserts"]))
     |> Map.put(:apk_unsigned_path, Path.join(project.work_dir, "out.unsigned.apk"))
     |> Map.put(:apk_signed_path, Path.join(project.work_dir, "out.signed.apk"))
+    |> Map.put(:apk_align_path, Path.join(project.work_dir, "out.align.apk"))
   end
 
   defp normal_android_sdk(project) do
@@ -215,9 +217,6 @@ defmodule Injector.Builder do
     ["lib", "libs"] |> Enum.each(fn x -> 
       cp_wildcard(Path.join(sdk.path, x), "/**/*.so", project.apk_lib_dir)
     end)
-    sdk.classpath |> Enum.each(fn x ->
-      cp_wildcard(Path.join(sdk.path, x), "/**/*.jar", project.apk_libs_dir)
-    end)
     project
   end
 
@@ -292,11 +291,15 @@ defmodule Injector.Builder do
   end
 
   defp dex_jar(project) do
+    jars = project.sdk_list |> Enum.map(fn sdk ->
+      find_file(sdk.path, "/**/*.jar", sdk.classpath)
+    end) |> List.flatten
+
     cmdline = [
       project.dx,
       "--dex",
       "--output", Path.join(project.apk_bin_dir, "classes.dex"),
-      Path.join(project.apk_bin_dir, "classes.jar")
+      Path.join(project.apk_bin_dir, "classes.jar") | jars
     ]
     run_cmd(project, cmdline)
   end
@@ -363,12 +366,20 @@ defmodule Injector.Builder do
       project.jarsigner,
       "-digestalg", "SHA1",
       "-sigalg", "MD5withRSA",
-      "-verbose",
       "-keystore", project.keystore,
       "-storepass", project.storepass,
       "-keypass", project.keypass,
       "-signedjar", project.apk_signed_path,
       project.apk_unsigned_path, project.alias,
+    ]
+    run_cmd(project, cmdline)
+
+    cmdline = [
+      project.zipalign,
+      "-f",
+      "4",
+      project.apk_signed_path,
+      project.apk_align_path,
     ]
     run_cmd(project, cmdline)
   end

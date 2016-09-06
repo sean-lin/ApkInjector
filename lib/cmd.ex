@@ -10,8 +10,8 @@ defmodule Injector.Cmd do
   end
 
   def run(project_cfg) do
+
     load_project(project_cfg)
-    |> work_dir(project_cfg)
     |> Injector.Builder.build()
   end
 
@@ -24,21 +24,29 @@ defmodule Injector.Cmd do
     Code.ensure_loaded?(Injector.SDKInfo)
     project = File.read!(file)
               |> Poison.decode!(as: %Injector.Project{}, keys: :atoms!)
+    
+    base = Path.absname(file) |> Path.dirname
     :maps.update_with(:sdk_list, fn l ->
       for i <- l do
-        %Injector.SDKInfo{} |> Map.merge(i)
+        %Injector.SDKInfo{} 
+        |> Map.merge(i)
+        |> normal_dirs([:path], base)
       end
     end, project)
+    |> normal_dirs([:work_dir, :keystore, :apk_path], base)
   end
 
-  defp work_dir(%{work_dir: <<"/", _::binary>>}=project, _project_cfg) do
-    project
+  defp normal_dirs(project, dirs, base) do
+    Enum.reduce(dirs, project, fn key, acc ->
+      path = Map.get(acc, key) |> abspath(base)
+      Map.put(acc, key, path)
+    end)
   end
-  defp work_dir(project, project_cfg) do
-    dir = Path.absname(project_cfg)
-          |> Path.dirname
-          |> Path.join(project.work_dir)
-          |> Path.absname
-    Map.put(project, :work_dir, dir)
+
+  defp abspath(<<"/", _::binary>>=path, _base) do
+    path
+  end
+  defp abspath(path, base) do
+    Path.join(base, path) |> Path.absname
   end
 end

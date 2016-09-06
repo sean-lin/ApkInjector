@@ -4,7 +4,7 @@
 
     "sdk_list": [{
         "path": "/home/sean/tmp/apk/sdk/",
-        "class": "com.ejoy.outsource.OutSource1"
+        "class": "com.ejoy.outsource.TestOutSource1"
     }],
     "meta_data": {},
     "work_dir": "./test_project",
@@ -12,5 +12,9 @@
     "android_sdk_root": "/home/sean/Android/Sdk",
     "android_platform": "23",
 
-    "apk_path": "/home/sean/tmp/apk/app.apk"
+    "apk_path": "/home/sean/tmp/apk/app.apk",
+    "keystore": "./test.keystore", 
+    "storepass": "123456", 
+    "alias": "test", 
+    "keypass": "123456"
 }
