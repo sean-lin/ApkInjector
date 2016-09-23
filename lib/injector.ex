@@ -223,7 +223,7 @@ defmodule Injector.Builder do
   defp prebuild_sdks(project) do
     project.sdk_list |> Enum.each(fn sdk ->
       manifest = Path.join(sdk.path, "AndroidManifest.xml")
-      build_package_R(project, manifest)
+      build_package_R(project, manifest, true)
       classpath = find_file(sdk.path, "/**/*.jar", sdk.classpath)
       files = find_file(sdk.path, "/**/*.java", sdk.src)
       build_java_class(project, classpath, files)
@@ -244,7 +244,7 @@ defmodule Injector.Builder do
     |> Enum.filter(fn dir -> File.exists?(dir) end)
   end
 
-  defp build_package_R(project, manifest_path) do
+  defp build_package_R(project, manifest_path, non_constant_id \\ false) do
     cmdline = [
       project.aapt,
       "package", "-m",
@@ -254,7 +254,12 @@ defmodule Injector.Builder do
       "-I", project.base_package, 
       "-S", project.apk_res_dir
     ]
-    cmdline = cmdline ++ :lists.join("-S", aapt_all(project, "res"))
+    cmdline = cmdline ++ append_opts("-S", aapt_all(project, "res"))
+
+    cmdline = case non_constant_id do
+      true -> cmdline ++ ["--non-constant-id"]
+      false -> cmdline
+    end
     run_cmd(project, cmdline)
   end
   
@@ -317,8 +322,8 @@ defmodule Injector.Builder do
       "-S", project.apk_res_dir,
       "-A", project.apk_asserts_dir
     ]
-    cmdline = cmdline ++ :lists.join("-S", aapt_all(project, "res"))
-    cmdline = cmdline ++ :lists.join("-A", aapt_all(project, "assets"))
+    cmdline = cmdline ++ append_opts("-S", aapt_all(project, "res"))
+    cmdline = cmdline ++ append_opts("-A", aapt_all(project, "assets"))
     
     run_cmd(project, cmdline)
 
@@ -388,7 +393,8 @@ defmodule Injector.Builder do
     project
   end
 
-  defp run_cmd(project, [cmd | args]) do
+  defp run_cmd(project, [cmd | args]=cmdline) do
+    IO.inspect Enum.join(cmdline, " ")
     {output, 0} = System.cmd(cmd, args)
     IO.puts output 
     project
@@ -407,5 +413,11 @@ defmodule Injector.Builder do
       File.rm_rf(target)
       File.cp_r!(from, target)
     end
+  end
+
+  defp append_opts(switch, args) do
+    Enum.map(args, fn x ->
+      [switch, x]
+    end) |> :lists.flatten
   end
 end

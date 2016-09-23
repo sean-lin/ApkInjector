@@ -40,7 +40,7 @@ defmodule Injector.AndroidManifest do
     
     new_root = xmlElement(target_manifest, content: [target_app|target_content])
     target = %{target | body: new_root, uses_permission: uses_permission}
-
+    
     case from.main_activity_name do
       nil -> target
       name ->
@@ -58,7 +58,7 @@ defmodule Injector.AndroidManifest do
       change_element(app, :activity, fn n ->
         case get_android_name(n) do
           ^main_activity_name -> insert_element(n, [manifest.main_activity_intent_filter])
-          o -> o
+          _o -> n
         end
       end)
     end)
@@ -96,7 +96,7 @@ defmodule Injector.AndroidManifest do
           change_element(app, :activity, fn n ->
             case get_android_name(n) do
               ^main_activity_name -> activity
-              o -> o
+              _o -> n
             end
           end)
         end)
@@ -175,5 +175,11 @@ defmodule Injector.AndroidManifest do
       attrib = xmlAttribute(name: :"android:name", value: permission)
       xmlElement(name: :"uses-permission", attributes: [attrib])
     end
+  end
+
+  def xml_inspect(root) do
+    xml_prolog = ~s(<?xml version="1.0" encoding="utf-8" standalone="no"?>)
+    :xmerl.export_simple([root], :xmerl_xml, prolog: xml_prolog)
+    |> IO.puts
   end
 end
