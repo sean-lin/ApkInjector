@@ -1,18 +1,29 @@
 defmodule Injector.Cmd do
   @switches [
-    project: :string
+    project: :string,
+    packtools: :string,
   ]
   def main(args) do
     with options <- parse_args(args),
-      project_cfg <- Keyword.get(options, :project) do
-      run(project_cfg)
+      project_cfg when is_binary(project_cfg) <- Keyword.get(options, :project) do
+      run(options)
     end
   end
 
-  def run(project_cfg) do
-
-    load_project(project_cfg)
+  def run(options) do
+    project_cfg = Keyword.get(options, :project)
+    load_project(project_cfg, options)
     |> Injector.Builder.build()
+  end
+
+  defp set_packtools(project, path) when is_binary(path) do
+    %{project | packtools: path}
+  end
+  defp set_packtools(project, nil) do
+    path = :code.priv_dir(:injector)
+            |> List.to_string
+            |> Path.join("jar")
+    set_packtools(project, path)
   end
 
   defp parse_args(args) do
@@ -20,10 +31,11 @@ defmodule Injector.Cmd do
     options
   end
 
-  def load_project(file) do
+  def load_project(file, options) do
     Code.ensure_loaded?(Injector.SDKInfo)
     project = File.read!(file)
               |> Poison.decode!(as: %Injector.Project{}, keys: :atoms!)
+              |> set_packtools(Keyword.get(options, :packtools))
     
     base = Path.absname(file) |> Path.dirname
     :maps.update_with(:sdk_list, fn l ->
@@ -33,7 +45,7 @@ defmodule Injector.Cmd do
         |> normal_dirs([:path], base)
       end
     end, project)
-    |> normal_dirs([:work_dir, :keystore, :apk_path], base)
+    |> normal_dirs([:work_dir, :keystore, :apk_path, :packtools], base)
   end
 
   defp normal_dirs(project, dirs, base) do

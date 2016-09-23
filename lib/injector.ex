@@ -8,6 +8,7 @@ defmodule Injector.Project do
     project_desc: "",
     android_sdk_root: nil,  # required
     android_platform: nil,  # required
+    packtools: nil,
 
     sdk_list: [],
     meta_data: %{},
@@ -171,10 +172,9 @@ defmodule Injector.Builder do
   end
 
   defp normal_apktool(project) do
-    dir = :code.priv_dir(:injector) |> List.to_string
     project
-    |> Map.put(:apktool, Path.join([dir, "jar", "apktool.jar"]))
-    |> Map.put(:baksmali, Path.join([dir, "jar", "baksmali.jar"]))
+    |> Map.put(:apktool, Path.join(project.packtools, "apktool.jar"))
+    |> Map.put(:baksmali, Path.join(project.packtools, "baksmali.jar"))
   end
 
   defp make_dirs(project) do

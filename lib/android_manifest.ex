@@ -62,7 +62,7 @@ defmodule Injector.AndroidManifest do
         end
       end)
     end)
-    |> change_attribute(:package, fn x -> manifest.package end)
+    |> change_attribute(:package, fn _x -> manifest.package end)
     
     :xmerl.export_simple([root], :xmerl_xml, prolog: xml_prolog)
   end
@@ -152,7 +152,7 @@ defmodule Injector.AndroidManifest do
 
   defp partition_element(xmlElement(content: content)=root, name) do
     {take, rest} = Enum.partition(content, 
-     fn xmlElement(name: ^name)=match -> true
+     fn xmlElement(name: ^name) -> true
      _ -> false
     end)
     {take, xmlElement(root, content: rest)}

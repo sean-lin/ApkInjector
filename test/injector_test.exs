@@ -7,6 +7,6 @@ defmodule InjectorTest do
   end
 
   test "run" do
-    Injector.Cmd.run("./test/test.json")
+    Injector.Cmd.run([project: "./test/test.json"])
   end
 end
