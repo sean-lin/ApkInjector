@@ -1,9 +1,27 @@
 defmodule Injector do
+  use Application
+  require Logger
+
+  # See http://elixir-lang.org/docs/stable/elixir/Application.html
+  # for more information on OTP Applications
+  def start(_, _) do
+    import Supervisor.Spec, warn: false
+
+    children = [
+      worker(GenEvent, [[name: Injector.Progress]]),
+    ]
+
+    # See http://elixir-lang.org/docs/stable/elixir/Supervisor.html
+    # for other strategies and supported options
+    opts = [strategy: :one_for_one, name: Injector.Supervisor]
+    Supervisor.start_link(children, opts)
+  end
 end
 
 defmodule Injector.Project do
   @derive [Poison.Encoder]
   defstruct [
+    id: nil,                # required
     project_name: nil,
     project_desc: "",
     android_sdk_root: nil,  # required
@@ -43,22 +61,24 @@ end
 defmodule Injector.Builder do
   def build(project) do
     project = project
+              |> sync_event(:init, :start)
               |> normal_android_sdk
               |> normal_jdk
               |> normal_output_apk
               |> normal_apktool
-              |> decode_apk
-              |> make_dirs
-              |> parse_manifest
+              |> sync_event(:init, :end)
+              |> sync_event_wrapper(&decode_apk/1, :decode_apk)
+              |> sync_event_wrapper(&make_dirs/1, :make_dirs)
+              |> sync_event_wrapper(&parse_manifest/1, :parse_manifest)
               |> inject_sdks
-              |> write_manifest
-              |> write_sdk_config
-              |> prebuild_sdks
-              |> prebuild_project
-              |> build_jar
-              |> dex_jar
-              |> aapt_res_assets
-              |> build_apk
+              |> sync_event_wrapper(&write_manifest/1, :write_manifest)
+              |> sync_event_wrapper(&write_sdk_config/1, :write_sdk_config)
+              |> sync_event_wrapper(&prebuild_sdks/1, :prebuild_sdks)
+              |> sync_event_wrapper(&prebuild_project/1, :prebuild_project)
+              |> sync_event_wrapper(&build_jar/1, :build_jar)
+              |> sync_event_wrapper(&dex_jar/1, :build_dex)
+              |> sync_event_wrapper(&aapt_res_assets/1, :build_assets)
+              |> sync_event_wrapper(&build_apk/1, :build_apk)
               |> sign_apk
               |> clean
 
@@ -195,8 +215,10 @@ defmodule Injector.Builder do
 
   defp inject_sdk(project, sdk) do
     project
+    |> sync_event(:inject_sdk, :start, %{name: sdk.name})
     |> inject_sdk_manifest(sdk)
     |> inject_sdk_lib(sdk)
+    |> sync_event(:inject_sdk, :end, %{name: sdk.name})
   end
 
   defp inject_sdk_manifest(project, sdk) do
@@ -367,6 +389,7 @@ defmodule Injector.Builder do
     project
   end
   defp sign_apk(project) do
+    sync_event(project, :sign_apk, :start)
     cmdline = [
       project.jarsigner,
       "-digestalg", "SHA1",
@@ -387,16 +410,15 @@ defmodule Injector.Builder do
       project.apk_align_path,
     ]
     run_cmd(project, cmdline)
+    |> sync_event(:sign_apk, :end)
   end
 
   defp clean(project) do
     project
   end
 
-  defp run_cmd(project, [cmd | args]=cmdline) do
-    IO.inspect Enum.join(cmdline, " ")
-    {output, 0} = System.cmd(cmd, args)
-    IO.puts output 
+  defp run_cmd(project, [cmd | args]) do
+    {_output, 0} = System.cmd(cmd, args)
     project
   end
 
@@ -419,5 +441,19 @@ defmodule Injector.Builder do
     Enum.map(args, fn x ->
       [switch, x]
     end) |> :lists.flatten
+  end
+
+  defp sync_event(project, progress, type, info \\ nil) do
+    GenEvent.notify(
+      Injector.Progress, 
+      {project.id, progress, {type, info}})
+    project
+  end
+
+  defp sync_event_wrapper(project, func, progress) do
+    project
+    |> sync_event(progress, :start)
+    |> func.()
+    |> sync_event(progress, :end)
   end
 end

@@ -3,6 +3,7 @@
     "project_desc": "hello world",
 
     "sdk_list": [{
+        "name": "testSDK",
         "path": "/home/sean/tmp/apk/sdk/",
         "class": "com.ejoy.outsource.TestOutSource1"
     }],

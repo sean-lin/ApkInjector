@@ -1,5 +1,6 @@
 defmodule Injector.SDKInfo do
   defstruct [
+    name: nil,
     path: nil,
     class: nil,
     src: ["src"],

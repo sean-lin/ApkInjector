@@ -4,6 +4,7 @@ defmodule Injector.Cmd do
     packtools: :string,
   ]
   def main(args) do
+    handler_progress()
     with options <- parse_args(args),
       project_cfg when is_binary(project_cfg) <- Keyword.get(options, :project) do
       run(options)
@@ -46,6 +47,7 @@ defmodule Injector.Cmd do
       end
     end, project)
     |> normal_dirs([:work_dir, :keystore, :apk_path, :packtools], base)
+    |> Map.put(:id, :erlang.make_ref())
   end
 
   defp normal_dirs(project, dirs, base) do
@@ -60,5 +62,15 @@ defmodule Injector.Cmd do
   end
   defp abspath(path, base) do
     Path.join(base, path) |> Path.absname
+  end
+
+  defp handler_progress do
+    Task.start_link fn ->
+      stream = GenEvent.stream(Injector.Progress)
+
+      for {_id, progress, type, _info}<- stream do
+        IO.inspect "#{progress}: #{type}"
+      end
+    end
   end
 end
