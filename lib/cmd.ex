@@ -68,7 +68,7 @@ defmodule Injector.Cmd do
     Task.start_link fn ->
       stream = GenEvent.stream(Injector.Progress)
 
-      for {_id, progress, type, _info}<- stream do
+      for {_id, progress, type, _info} <- stream do
         IO.inspect "#{progress}: #{type}"
       end
     end

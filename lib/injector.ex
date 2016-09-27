@@ -446,7 +446,7 @@ defmodule Injector.Builder do
   defp sync_event(project, progress, type, info \\ nil) do
     GenEvent.notify(
       Injector.Progress, 
-      {project.id, progress, {type, info}})
+      {project.id, progress, type, info})
     project
   end
 
