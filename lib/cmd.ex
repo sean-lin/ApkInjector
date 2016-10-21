@@ -33,7 +33,7 @@ defmodule Injector.Cmd do
   end
 
   def load_project(file, options) do
-    Code.ensure_loaded?(Injector.SDKInfo)
+    true = Code.ensure_loaded?(Injector.SDKInfo)
     project = File.read!(file)
               |> Poison.decode!(as: %Injector.Project{}, keys: :atoms!)
               |> set_packtools(Keyword.get(options, :packtools))
