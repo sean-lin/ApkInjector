@@ -114,23 +114,36 @@ defmodule Injector.Builder do
     project
   end
 
-  # <resources>
-  #     <string-array name="sdkNames">
-  #         <item>com.ejoy.sdk<item>
-  #     </string-array>
-  # </resources>
+ 
+  # {
+  #   "sdks": [
+  #     {
+  #       "class": "com.ejoy.unisdk_adapter.testsdk.TestSDK",
+  #       "meta": { },
+  #       "ability": ["ACCOUNT", "PAY"]
+  #     }
+  #   ]
+  # }
+
   defp write_sdk_config(project) do
-    xml_prolog = ~s(<?xml version="1.0" encoding="utf-8"?>)
-    xml_path = Path.join([project.apk_res_dir, "values", "injector_sdk.xml"])
+    config_dir = Path.join([project.apk_assets_dir, "unisdk"])
+    File.mkdir_p(config_dir)
+    config_path = Path.join(config_dir, "sdkconfig.json")
 
     items = for sdk <- project.sdk_list do
-      {:item, [], [String.to_charlist(sdk.class)]}
+      %{
+        class: sdk.class,
+        meta: sdk.meta_data,
+        ability: sdk.ability,
+      }
     end
-    doc = {:resources, [], [
-      {:"string-array", [name: "sdkNames"], items},
-    ]}
-    File.open!(xml_path, @write_opt, fn fd ->
-      data = :xmerl.export_simple([doc], :xmerl_xml, prolog: xml_prolog)
+    doc = %{
+      sdks: items,
+      meta: project.meta_data
+    }
+
+    File.open!(config_path, @write_opt, fn fd ->
+      data = Poison.encode!(doc)
       IO.write(fd, data)
     end)
     project
@@ -144,7 +157,7 @@ defmodule Injector.Builder do
     |> Map.put(:apk_gen_dir, Path.join([project.work_dir, "out", "gen"]))
     |> Map.put(:apk_bin_dir, Path.join([project.work_dir, "out", "bin"]))
     |> Map.put(:apk_res_dir, Path.join([project.work_dir, "out", "res"]))
-    |> Map.put(:apk_asserts_dir, Path.join([project.work_dir, "out", "asserts"]))
+    |> Map.put(:apk_assets_dir, Path.join([project.work_dir, "out", "assets"]))
     |> Map.put(:apk_unsigned_path, Path.join(project.work_dir, "out.unsigned.apk"))
     |> Map.put(:apk_signed_path, Path.join(project.work_dir, "out.signed.apk"))
     |> Map.put(:apk_align_path, Path.join(project.work_dir, "out.align.apk"))
@@ -203,7 +216,7 @@ defmodule Injector.Builder do
     File.mkdir_p(project.apk_gen_dir)
     File.mkdir_p(project.apk_bin_dir)
     File.mkdir_p(project.apk_res_dir)
-    File.mkdir_p(project.apk_asserts_dir)
+    File.mkdir_p(project.apk_assets_dir)
     project
   end
 
@@ -342,7 +355,7 @@ defmodule Injector.Builder do
       "-I", project.base_package,
       "-F", resources_apk,
       "-S", project.apk_res_dir,
-      "-A", project.apk_asserts_dir
+      "-A", project.apk_assets_dir
     ]
     cmdline = cmdline ++ append_opts("-S", aapt_all(project, "res"))
     cmdline = cmdline ++ append_opts("-A", aapt_all(project, "assets"))
@@ -360,7 +373,7 @@ defmodule Injector.Builder do
     run_cmd(project, cmdline)
     
     replace_dir(project.apk_res_dir, Path.join(resources_out, "res"))
-    replace_dir(project.apk_asserts_dir, Path.join(resources_out, "asserts"))
+    replace_dir(project.apk_assets_dir, Path.join(resources_out, "assets"))
     project
   end
 
@@ -417,7 +430,8 @@ defmodule Injector.Builder do
     project
   end
 
-  defp run_cmd(project, [cmd | args]) do
+  defp run_cmd(project, [cmd | args]=cmdline) do
+    IO.inspect(Enum.join(cmdline, " "))
     {_output, 0} = System.cmd(cmd, args)
     project
   end

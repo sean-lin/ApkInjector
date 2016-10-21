@@ -5,7 +5,8 @@
     "sdk_list": [{
         "name": "testSDK",
         "path": "/home/sean/tmp/apk/sdk/",
-        "class": "com.ejoy.outsource.TestOutSource1"
+        "class": "com.ejoy.outsource.TestOutSource1",
+        "ability": ["ACCOUNT", "PAY"]
     }],
     "meta_data": {},
     "work_dir": "./test_project",

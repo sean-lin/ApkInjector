@@ -6,5 +6,6 @@ defmodule Injector.SDKInfo do
     src: ["src"],
     classpath: ["libs"],
     meta_data: %{}, 
+    ability: [],
   ]
 end
