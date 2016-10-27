@@ -35,7 +35,7 @@ defmodule Injector.Cmd do
   def load_project(file, options) do
     true = Code.ensure_loaded?(Injector.SDKInfo)
     project = File.read!(file)
-              |> Poison.decode!(as: %Injector.Project{}, keys: :atoms!)
+              |> Poison.decode!(as: %Injector.Project{}, keys: :atoms)
               |> set_packtools(Keyword.get(options, :packtools))
     
     base = Path.absname(file) |> Path.dirname
