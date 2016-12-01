@@ -70,9 +70,9 @@ defmodule Injector.Builder do
               |> sync_event_wrapper(&decode_apk/1, :decode_apk)
               |> sync_event_wrapper(&make_dirs/1, :make_dirs)
               |> sync_event_wrapper(&parse_manifest/1, :parse_manifest)
+              |> sync_event_wrapper(&write_sdk_config/1, :write_sdk_config)  # 先写这个， 因为manifest接下来就会改掉
               |> inject_sdks
               |> sync_event_wrapper(&write_manifest/1, :write_manifest)
-              |> sync_event_wrapper(&write_sdk_config/1, :write_sdk_config)
               |> sync_event_wrapper(&prebuild_sdks/1, :prebuild_sdks)
               |> sync_event_wrapper(&prebuild_project/1, :prebuild_project)
               |> sync_event_wrapper(&build_jar/1, :build_jar)
@@ -138,6 +138,8 @@ defmodule Injector.Builder do
       }
     end
     doc = %{
+      main_activity: List.to_string(project.manifest.main_activity_name),
+      package: List.to_string(project.manifest.package), 
       sdks: items,
       meta: project.meta_data
     }
