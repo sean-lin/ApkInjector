@@ -1,6 +1,7 @@
 {
     "project_name": "test_demo",
     "project_desc": "hello world",
+    "package_name": "com.ejoy.injector_test",
 
     "sdk_list": [{
         "name": "testSDK",

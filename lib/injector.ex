@@ -23,6 +23,7 @@ defmodule Injector.Project do
   defstruct [
     id: nil,                # required
     project_name: nil,
+    package_name: nil,
     project_desc: "",
     android_sdk_root: nil,  # required
     android_platform: nil,  # required
@@ -99,8 +100,14 @@ defmodule Injector.Builder do
 
   defp parse_manifest(project) do
     manifest_path = Path.join(project.apk_dir, "AndroidManifest.xml")
+    manifest = Injector.AndroidManifest.file(manifest_path)
+    manifest = case project.package_name do
+      nil -> manifest
+      name -> %{manifest | package: String.to_charlist(name)}
+    end
+    
     project
-    |> Map.put(:manifest, Injector.AndroidManifest.file(manifest_path))
+    |> Map.put(:manifest, manifest)
     |> Map.put(:manifest_path, manifest_path)
   end
   
@@ -138,8 +145,8 @@ defmodule Injector.Builder do
       }
     end
     doc = %{
-      main_activity: List.to_string(project.manifest.main_activity_name),
-      package: List.to_string(project.manifest.package), 
+      main_activity: to_string(project.manifest.main_activity_name),
+      package: to_string(project.manifest.package), 
       sdks: items,
       meta: project.meta_data
     }
