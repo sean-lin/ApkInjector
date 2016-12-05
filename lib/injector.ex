@@ -79,6 +79,8 @@ defmodule Injector.Builder do
               |> sync_event_wrapper(&build_jar/1, :build_jar)
               |> sync_event_wrapper(&dex_jar/1, :build_dex)
               |> sync_event_wrapper(&aapt_res_assets/1, :build_assets)
+              |> sync_event_wrapper(&baksmali/1, :baksmali)
+              |> run_sdk_scripts
               |> sync_event_wrapper(&build_apk/1, :build_apk)
               |> sign_apk
               |> clean
@@ -101,9 +103,9 @@ defmodule Injector.Builder do
   defp parse_manifest(project) do
     manifest_path = Path.join(project.apk_dir, "AndroidManifest.xml")
     manifest = Injector.AndroidManifest.file(manifest_path)
-    manifest = case project.package_name do
-      nil -> manifest
-      name -> %{manifest | package: String.to_charlist(name)}
+    {project, manifest} = case project.package_name do
+      nil -> {%{project | package_name: manifest.package}, manifest}
+      name -> {project, %{manifest | package: String.to_charlist(name)}}
     end
     
     project
@@ -344,13 +346,21 @@ defmodule Injector.Builder do
       find_file(sdk.path, "/**/*.jar", sdk.classpath)
     end) |> List.flatten
 
+    jar_path = Path.join(project.apk_bin_dir, "classes.jar")
+
     cmdline = [
       project.dx,
       "--dex",
       "--output", Path.join(project.apk_bin_dir, "classes.dex"),
-      Path.join(project.apk_bin_dir, "classes.jar") | jars
+      jar_path | jars
     ]
-    run_cmd(project, cmdline)
+
+    
+    project = run_cmd(project, cmdline)
+    
+    File.rm!(jar_path)
+
+    project
   end
 
   defp aapt_res_assets(project) do
@@ -386,7 +396,7 @@ defmodule Injector.Builder do
     project
   end
 
-  defp build_apk(project) do
+  defp baksmali(project) do
     smali_dir = Path.join(project.apk_dir, "smali")
     dex_dir = Path.join(project.apk_bin_dir, "classes.dex")
     cmdline = [
@@ -395,8 +405,37 @@ defmodule Injector.Builder do
       "-o", smali_dir, dex_dir
     ]
 
-    run_cmd(project, cmdline)
+    project = run_cmd(project, cmdline)
     
+    File.rm!(dex_dir)
+    
+    project
+  end
+
+  defp run_sdk_scripts(project) do
+    Enum.reduce(project.sdk_list, project, fn x, acc ->
+      run_sdk_script(acc, x)
+    end)
+  end
+
+  defp run_sdk_script(project, sdk) do
+    project
+    |> sync_event(:run_scrip, :start, %{name: sdk.name})
+    |> try_run_script(sdk)
+    |> sync_event(:run_scrip, :end, %{name: sdk.name})
+  end
+
+
+  defp try_run_script(project, sdk) do
+    script = Path.join(sdk.path, "script.exs")
+    if File.exists? script do
+      Injector.Script.run(project, sdk, script)
+    else
+      project
+    end
+  end
+
+  defp build_apk(project) do
     cmdline = [
       project.java, "-jar",
       "-Xmx512M", "-Djava.awt.headless=true",
