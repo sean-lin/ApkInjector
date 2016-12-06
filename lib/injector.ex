@@ -105,7 +105,10 @@ defmodule Injector.Builder do
     manifest = Injector.AndroidManifest.file(manifest_path)
     {project, manifest} = case project.package_name do
       nil -> {%{project | package_name: manifest.package}, manifest}
-      name -> {project, %{manifest | package: String.to_charlist(name)}}
+      name ->
+        # package_name 用 Charlist 保证后面处理起来方便
+        name = String.to_charlist(name)
+        {%{project | package_name: name}, %{manifest | package: name}}
     end
     
     project

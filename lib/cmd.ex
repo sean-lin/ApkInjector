@@ -37,7 +37,12 @@ defmodule Injector.Cmd do
     project = File.read!(file)
               |> Poison.decode!(as: %Injector.Project{}, keys: :atoms)
               |> set_packtools(Keyword.get(options, :packtools))
-    
+
+    project = case project.android_sdk_root do
+      nil -> %{project | android_sdk_root: System.get_env("ANDROID_HOME")}
+      _other -> project
+    end
+
     base = Path.absname(file) |> Path.dirname
     :maps.update_with(:sdk_list, fn l ->
       for i <- l do
