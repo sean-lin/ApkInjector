@@ -81,6 +81,7 @@ defmodule Injector.Builder do
               |> sync_event_wrapper(&aapt_res_assets/1, :build_assets)
               |> sync_event_wrapper(&baksmali/1, :baksmali)
               |> run_sdk_scripts
+              |> clean_ejoysdk_temp_file
               |> sync_event_wrapper(&build_apk/1, :build_apk)
               |> sign_apk
               |> clean
@@ -419,6 +420,11 @@ defmodule Injector.Builder do
     Enum.reduce(project.sdk_list, project, fn x, acc ->
       run_sdk_script(acc, x)
     end)
+  end
+
+  defp clean_ejoysdk_temp_file(project) do
+    Path.join([project.apk_dir, "assets", "make"]) |> File.rm_rf
+    project
   end
 
   defp run_sdk_script(project, sdk) do
