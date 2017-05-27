@@ -263,7 +263,7 @@ defmodule Injector.Builder do
   end
 
   defp inject_sdk_lib(project, sdk) do
-    ["lib", "libs"] |> Enum.each(fn x -> 
+    ["lib", "libs", "jni"] |> Enum.each(fn x -> 
       cp_wildcard(Path.join(sdk.path, x), "/**/*.so", project.apk_lib_dir)
     end)
     project
