@@ -22,7 +22,7 @@ defmodule Injector.AndroidManifest do
 
   def string(data) when is_binary(data) do
     data
-    |> String.to_charlist
+    |> :erlang.binary_to_list
     |> string
   end
   def string(data) when is_list(data) do
