@@ -60,4 +60,22 @@ defmodule Injector.Script.API do
     end)
     env 
   end
+
+  def update_android_manifest(%{project: project}=env, updater) do
+      {doc, _} = String.to_charlist(project.manifest_path) 
+                 |> :xmerl_scan.file([quiet: true])
+      [root] = :xmerl_xpath.string('/manifest[1]', doc)
+  
+      new_root = updater.(root) 
+
+      xml_prolog = ~s(<?xml version="1.0" encoding="utf-8" standalone="no"?>)
+      File.open!(project.manifest_path, [:binary, :write], fn fd ->
+        data = :xmerl.export_simple([new_root], :xmerl_xml, prolog: xml_prolog)
+        IO.write(fd, data)
+      end)
+      env
+  end
+
+  defdelegate change_element(root, name, cb), to: Injector.AndroidManifest
+  defdelegate change_attribute(root, name, cb), to: Injector.AndroidManifest
 end

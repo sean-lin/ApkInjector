@@ -79,7 +79,7 @@ defmodule Injector.AndroidManifest do
     |> get_main_activity
   end
 
-  defp get_attribute(xmlElement(attributes: attributes), attribute) do
+  def get_attribute(xmlElement(attributes: attributes), attribute) do
     xmlAttribute(value: value) = List.keyfind(attributes, attribute, xmlAttribute(:name))
     value
   end
@@ -129,7 +129,7 @@ defmodule Injector.AndroidManifest do
   end
 
   # 返回新元素修改， 返回非tuple删除
-  defp change_element(xmlElement(content: content)=root, name, cb) do
+  def change_element(xmlElement(content: content)=root, name, cb) do
     content = content |> Enum.map(
       fn xmlElement(name: ^name)=match -> cb.(match)
         any -> any
@@ -137,7 +137,7 @@ defmodule Injector.AndroidManifest do
     xmlElement(root, content: content)
   end
   
-  defp change_attribute(xmlElement(attributes: attributes)=root, name, cb) do
+  def change_attribute(xmlElement(attributes: attributes)=root, name, cb) do
     attributes = attributes |> Enum.map(
       fn xmlAttribute(name: ^name)=match ->
         case cb.(match) do
@@ -149,7 +149,8 @@ defmodule Injector.AndroidManifest do
       end) |> Enum.filter(fn x -> is_tuple(x) end)
     xmlElement(root, attributes: attributes)
   end
-
+  
+  # 取出指定的元素
   defp partition_element(xmlElement(content: content)=root, name) do
     {take, rest} = Enum.partition(content, 
      fn xmlElement(name: ^name) -> true
