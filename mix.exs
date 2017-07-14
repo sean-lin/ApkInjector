@@ -20,6 +20,7 @@ defmodule Injector.Mixfile do
       applications: [
       :logger,
       :eex,
+      :poison,
       ]
     ]
   end
