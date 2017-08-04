@@ -129,12 +129,31 @@ defmodule Injector.AndroidManifest do
   end
 
   # 返回新元素修改， 返回非tuple删除
-  def change_element(xmlElement(content: content)=root, name, cb) do
+  def change_element(xmlElement(content: content)=root, name, cb) when is_atom(name) do
     content = content |> Enum.map(
       fn xmlElement(name: ^name)=match -> cb.(match)
         any -> any
       end) |> Enum.filter(fn x -> is_tuple(x) end)
     xmlElement(root, content: content)
+  end
+  def change_element(xmlElement(content: content)=root, cmp, cb) when is_function(cmp) do
+    content = content 
+              |> Enum.map(fn x -> 
+                case cmp.(x) do
+                  true -> cb.(x)
+                  false -> x
+                end
+              end) 
+              |> Enum.filter(fn x -> is_tuple(x) end)
+    xmlElement(root, content: content)
+  end
+  def change_element(root, [cmp], cb) do
+    change_element(root, cmp, cb)
+  end
+  def change_element(root, [cmp|rest], cb) do
+    change_element(root, cmp, fn x ->
+      change_element(x, rest, cb)
+    end)
   end
   
   def change_attribute(xmlElement(attributes: attributes)=root, name, cb) do
