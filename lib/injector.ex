@@ -27,6 +27,7 @@ defmodule Injector.Project do
     project_desc: "",
     android_sdk_root: nil,  # required
     android_platform: nil,  # required
+    do_not_compress: [],
     packtools: nil,
 
     sdk_list: [],
@@ -82,6 +83,7 @@ defmodule Injector.Builder do
               |> sync_event_wrapper(&baksmali/1, :baksmali)
               |> run_sdk_scripts
               |> clean_ejoysdk_temp_file
+              |> Injector.MergeYml.merge
               |> sync_event_wrapper(&build_apk/1, :build_apk)
               |> sign_apk
               |> clean

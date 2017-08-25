@@ -1,1 +1,3 @@
-%{"poison": {:hex, :poison, "2.2.0", "4763b69a8a77bd77d26f477d196428b741261a761257ff1cf92753a0d4d24a63", [:mix], []}}
+%{"poison": {:hex, :poison, "2.2.0", "4763b69a8a77bd77d26f477d196428b741261a761257ff1cf92753a0d4d24a63", [], [], "hexpm"},
+  "yamerl": {:hex, :yamerl, "0.4.0", "ae215b1242810a9bc07716b88062f1bfe06f6bc7cf68372091f630baa536df79", [:rebar3], [], "hexpm"},
+  "yaml_elixir": {:hex, :yaml_elixir, "1.0.0", "a0b703148aa8926a08fc14619c83e9cdf7555ff7e8bb9e74c08aa716eaf8c609", [:mix], [], "hexpm"}}

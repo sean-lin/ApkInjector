@@ -21,6 +21,7 @@ defmodule Injector.Mixfile do
       :logger,
       :eex,
       :poison,
+      :yaml_elixir,
       ]
     ]
   end
@@ -37,6 +38,8 @@ defmodule Injector.Mixfile do
   defp deps do
     [
       {:poison, "~> 2.0"},
+      {:yaml_elixir, "~> 1.0.0"},
+      {:yamerl, "~> 0.4.0"},
     ]
   end
 end
