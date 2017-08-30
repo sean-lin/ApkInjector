@@ -499,7 +499,9 @@ defmodule Injector.Builder do
     Path.wildcard(base <> glob)
     |> Enum.map(fn f -> 
       relative = Path.relative_to(f, base)
-      File.cp_r!(f, Path.join(dest_base, relative), fn _, _ -> false end)
+      dest = Path.join(dest_base, relative)
+      dest |> Path.dirname |> File.mkdir_p
+      File.cp_r!(f, dest, fn _, _ -> false end)
     end)
   end
 
