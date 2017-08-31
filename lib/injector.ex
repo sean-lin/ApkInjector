@@ -32,6 +32,7 @@ defmodule Injector.Project do
 
     sdk_list: [],
     meta_data: %{},
+    pkg_tag: nil,
 
     work_dir: nil,
     apk_dir: nil,
@@ -156,7 +157,8 @@ defmodule Injector.Builder do
       main_activity: to_string(project.manifest.main_activity_name),
       package: to_string(project.manifest.package), 
       sdks: items,
-      meta: project.meta_data
+      meta: project.meta_data,
+      tag: project.pkg_tag,
     }
 
     File.open!(config_path, @write_opt, fn fd ->
@@ -254,7 +256,8 @@ defmodule Injector.Builder do
   defp inject_sdk_manifest(project, sdk) do
     meta_data = %{
       "main_activity": project.manifest.main_activity_name,
-      "package": project.manifest.package} 
+      "package": project.manifest.package,
+      "pkg_tag": project.pkg_tag} 
       |> Map.merge(project.meta_data)
       |> Map.merge(sdk.meta_data)
 
