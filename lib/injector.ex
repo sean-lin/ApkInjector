@@ -62,6 +62,7 @@ defmodule Injector.AndroidSDK do
 end
 
 defmodule Injector.Builder do
+  require Logger
   def build(project) do
     project = project
               |> sync_event(:init, :start)
@@ -99,7 +100,7 @@ defmodule Injector.Builder do
       "--output", project.apk_dir,
       "d", project.apk_path,
     ]
-    {output, 0} = System.cmd project.java, args 
+    {output, 0} = System.cmd project.java, args
     IO.puts output
     project
   end
@@ -114,12 +115,12 @@ defmodule Injector.Builder do
         name = String.to_charlist(name)
         {%{project | package_name: name}, %{manifest | package: name}}
     end
-    
+
     project
     |> Map.put(:manifest, manifest)
     |> Map.put(:manifest_path, manifest_path)
   end
-  
+
   @write_opt [:binary, :write]
 
   defp write_manifest(project) do
@@ -130,7 +131,7 @@ defmodule Injector.Builder do
     project
   end
 
- 
+
   # {
   #   "sdks": [
   #     {
@@ -155,7 +156,7 @@ defmodule Injector.Builder do
     end
     doc = %{
       main_activity: to_string(project.manifest.main_activity_name),
-      package: to_string(project.manifest.package), 
+      package: to_string(project.manifest.package),
       sdks: items,
       meta: project.meta_data,
       tag: project.pkg_tag,
@@ -188,11 +189,11 @@ defmodule Injector.Builder do
     build_tools_dir = Path.join(project.android_sdk_root, "build-tools")
 
     version = File.ls!(build_tools_dir)
-              |> Enum.map(fn x -> 
+              |> Enum.map(fn x ->
                 v = String.split(x, ".")
-                    |> Enum.map(&String.pad_leading(&1, 6, "0")) 
+                    |> Enum.map(&String.pad_leading(&1, 6, "0"))
                     |> Enum.join()
-                {x, v} 
+                {x, v}
               end)
               |> Enum.max_by(fn {_, v} -> v end)
               |> elem(0)
@@ -203,13 +204,13 @@ defmodule Injector.Builder do
                 tool_path = Path.join(found_dir, Atom.to_string(tool)) |> Path.absname
                 Map.put(acc, tool, tool_path)
               end)
-    
+
     base_package = Path.join(
-      [project.android_sdk_root, 
-       "platforms", 
-       "android-" <> project.android_platform, 
+      [project.android_sdk_root,
+       "platforms",
+       "android-" <> project.android_platform,
        "android.jar"])
-    
+
     Map.put(project, :base_package, base_package)
   end
 
@@ -219,7 +220,7 @@ defmodule Injector.Builder do
       path = Atom.to_charlist(x)
               |> :os.find_executable
               |> List.to_string
-      Map.put(acc, x, path) 
+      Map.put(acc, x, path)
     end)
   end
 
@@ -257,7 +258,7 @@ defmodule Injector.Builder do
     meta_data = %{
       "main_activity": project.manifest.main_activity_name,
       "package": project.manifest.package,
-      "pkg_tag": project.pkg_tag} 
+      "pkg_tag": project.pkg_tag}
       |> Map.merge(project.meta_data)
       |> Map.merge(sdk.meta_data)
 
@@ -269,7 +270,7 @@ defmodule Injector.Builder do
   end
 
   defp inject_sdk_lib(project, sdk) do
-    ["lib", "libs", "jni"] |> Enum.each(fn x -> 
+    ["lib", "libs", "jni"] |> Enum.each(fn x ->
       cp_wildcard(Path.join(sdk.path, x), "/**/*.so", project.apk_lib_dir)
     end)
     project
@@ -288,9 +289,8 @@ defmodule Injector.Builder do
 
   defp prebuild_project(project) do
     project
-    |> build_package_R(project.manifest_path)
-    |> build_java_class([], 
-      Path.wildcard(project.apk_gen_dir <> "/**/*.java"))
+    |> build_package_R(project.manifest_path) 
+    |> build_java_class([], Path.wildcard(project.apk_gen_dir <> "/**/*.java"))
   end
 
   defp aapt_all(project, dir) do
@@ -300,13 +300,14 @@ defmodule Injector.Builder do
   end
 
   defp build_package_R(project, manifest_path, non_constant_id \\ false) do
+    Logger.debug("build_package_R")
     cmdline = [
       project.aapt,
       "package", "-m",
       "--auto-add-overlay",
       "-J", project.apk_gen_dir,
       "-M", manifest_path,
-      "-I", project.base_package, 
+      "-I", project.base_package,
       "-S", project.apk_res_dir
     ]
     cmdline = cmdline ++ append_opts("-S", aapt_all(project, "res"))
@@ -317,11 +318,12 @@ defmodule Injector.Builder do
     end
     run_cmd(project, cmdline)
   end
-  
+
   defp build_java_class(project, _classpath, []) do
     project
   end
   defp build_java_class(project, classpath, files) do
+    Logger.debug("build_java_class")
     cmdline = [
       project.javac,
       "-target", "1.7",
@@ -332,7 +334,7 @@ defmodule Injector.Builder do
       | files]
     run_cmd(project, cmdline)
   end
-  
+
   defp find_file(root_path, glob, dirs) do
     dirs |> Enum.map(fn x ->
       dir = Path.join(root_path, x)
@@ -341,6 +343,7 @@ defmodule Injector.Builder do
   end
 
   defp build_jar(project) do
+    Logger.debug("build_jar")
     cmdline = [
       project.jar,
       "cvf",
@@ -364,9 +367,9 @@ defmodule Injector.Builder do
       jar_path | jars
     ]
 
-    
+
     project = run_cmd(project, cmdline)
-    
+
     File.rm!(jar_path)
 
     project
@@ -387,7 +390,7 @@ defmodule Injector.Builder do
     ]
     cmdline = cmdline ++ append_opts("-S", aapt_all(project, "res"))
     cmdline = cmdline ++ append_opts("-A", aapt_all(project, "assets"))
-    
+
     run_cmd(project, cmdline)
 
     resources_out = Path.join(project.work_dir, "resources_out")
@@ -399,7 +402,7 @@ defmodule Injector.Builder do
       "-o", resources_out,
     ]
     run_cmd(project, cmdline)
-    
+
     replace_dir(project.apk_res_dir, Path.join(resources_out, "res"))
     replace_dir(project.apk_assets_dir, Path.join(resources_out, "assets"))
     project
@@ -415,19 +418,21 @@ defmodule Injector.Builder do
     ]
 
     project = run_cmd(project, cmdline)
-    
+
     File.rm!(dex_dir)
-    
+
     project
   end
 
   defp run_sdk_scripts(project) do
+    Logger.debug("run_sdk_scripts")
     Enum.reduce(project.sdk_list, project, fn x, acc ->
       run_sdk_script(acc, x)
     end)
   end
 
   defp clean_ejoysdk_temp_file(project) do
+    Logger.debug("clean_ejoysdk_temp_file")
     Path.join([project.apk_dir, "assets", "make"]) |> File.rm_rf
     project
   end
@@ -493,14 +498,14 @@ defmodule Injector.Builder do
   end
 
   defp run_cmd(project, [cmd | args]=cmdline) do
-    IO.inspect(Enum.join(cmdline, " "))
+    Logger.debug("run cmd : #{inspect(Enum.join(cmdline, " "))}")
     {_output, 0} = System.cmd(cmd, args)
     project
   end
 
   defp cp_wildcard(base, glob, dest_base) do
     Path.wildcard(base <> glob)
-    |> Enum.map(fn f -> 
+    |> Enum.map(fn f ->
       relative = Path.relative_to(f, base)
       dest = Path.join(dest_base, relative)
       dest |> Path.dirname |> File.mkdir_p
@@ -523,7 +528,7 @@ defmodule Injector.Builder do
 
   defp sync_event(project, progress, type, info \\ nil) do
     GenEvent.notify(
-      Injector.Progress, 
+      Injector.Progress,
       {project.id, progress, type, info})
     project
   end
