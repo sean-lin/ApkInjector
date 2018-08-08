@@ -384,6 +384,7 @@ defmodule Injector.Builder do
       "--auto-add-overlay",
       "-M", project.manifest_path,
       "-I", project.base_package,
+      "--no-version-vectors",
       "-F", resources_apk,
       "-S", project.apk_res_dir,
       "-A", project.apk_assets_dir
